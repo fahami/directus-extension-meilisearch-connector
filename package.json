@@ -1,0 +1,67 @@
+{
+	"name": "directus-extension-meilisearch",
+	"description": "Meilisearch integration for Directus with real-time sync and hot-reloading.",
+	"icon": "extension",
+	"version": "1.0.0",
+	"author": "Fahmi Ali",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/fahami/directus-extension-meilisearch.git"
+	},
+	"bugs": {
+		"url": "https://github.com/fahami/directus-extension-meilisearch/issues"
+	},
+	"homepage": "https://github.com/fahami/directus-extension-meilisearch#readme",
+	"keywords": [
+		"directus",
+		"directus-extension",
+		"directus-extension-hook",
+		"directus-extension-endpoint",
+		"meilisearch",
+		"search",
+		"sync"
+	],
+	"type": "module",
+	"files": [
+		"dist"
+	],
+	"directus:extension": {
+		"type": "bundle",
+		"path": {
+			"app": "dist/app.js",
+			"api": "dist/api.js"
+		},
+		"entries": [
+			{
+				"type": "hook",
+				"name": "meilisearch-hook",
+				"source": "src/index.ts"
+			},
+			{
+				"type": "endpoint",
+				"name": "meilisearch",
+				"source": "src/endpoint.ts"
+			}
+		],
+		"host": "^10.10.0"
+	},
+	"scripts": {
+		"build": "directus-extension build",
+		"dev": "directus-extension build -w --no-minify",
+		"link": "directus-extension link",
+		"validate": "directus-extension validate"
+	},
+	"devDependencies": {
+		"@directus/extensions-sdk": "17.0.4",
+		"@types/express": "^5.0.6",
+		"typescript": "^5.9.3",
+		"vue": "^3.5.26"
+	},
+	"dependencies": {
+		"@directus/types": "^13.5.0",
+		"flat": "^6.0.1",
+		"meilisearch": "^0.54.0",
+		"string-strip-html": "^13.5.0"
+	}
+}
