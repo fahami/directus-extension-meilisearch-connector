@@ -127,8 +127,9 @@ export default defineHook(async ({ init, action }, { logger, services, getSchema
                     const existing = existingFields.find((f) => f.field === fieldDef.field);
                     if (!existing) {
                         try {
-                            // @ts-ignore
-                            await fieldsService.createField(TABLE_NAME, fieldDef.field);
+                            // FieldsService.createField(collection: string, field: Field)
+                            // We pass the full field definition object here.
+                            await fieldsService.createField(TABLE_NAME, fieldDef as any);
                             logger.info(`Added missing field: ${fieldDef.field}`);
                         } catch (error) {
                             logger.warn(`Failed to add field ${fieldDef.field}: ${error}`);

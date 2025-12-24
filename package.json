@@ -2,7 +2,7 @@
 	"name": "directus-extension-meilisearch-connector",
 	"description": "Meilisearch integration for Directus with real-time sync and hot-reloading.",
 	"icon": "extension",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"author": "Fahmi Ali",
 	"license": "MIT",
 	"repository": {
