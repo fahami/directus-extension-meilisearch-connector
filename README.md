@@ -16,9 +16,9 @@ A powerful Directus extension to synchronize your content seamlessly with [Meili
 Install the extension in your Directus project.
 
 ```bash
-npm install directus-extension-meilisearch
+npm install directus-extension-meilisearch-connector
 # or
-pnpm add directus-extension-meilisearch
+pnpm add directus-extension-meilisearch-connector
 ```
 
 ### 2. Configuration
