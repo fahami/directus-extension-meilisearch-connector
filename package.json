@@ -1,18 +1,18 @@
 {
-	"name": "directus-extension-meilisearch",
+	"name": "directus-extension-meilisearch-connector",
 	"description": "Meilisearch integration for Directus with real-time sync and hot-reloading.",
 	"icon": "extension",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"author": "Fahmi Ali",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/fahami/directus-extension-meilisearch.git"
+		"url": "git+https://github.com/fahami/directus-extension-meilisearch-connector.git"
 	},
 	"bugs": {
-		"url": "https://github.com/fahami/directus-extension-meilisearch/issues"
+		"url": "https://github.com/fahami/directus-extension-meilisearch-connector/issues"
 	},
-	"homepage": "https://github.com/fahami/directus-extension-meilisearch#readme",
+	"homepage": "https://github.com/fahami/directus-extension-meilisearch-connector#readme",
 	"keywords": [
 		"directus",
 		"directus-extension",
