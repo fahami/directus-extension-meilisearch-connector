@@ -2,7 +2,7 @@
 	"name": "directus-extension-meilisearch-connector",
 	"description": "Meilisearch integration for Directus with real-time sync and hot-reloading.",
 	"icon": "extension",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"author": "Fahmi Ali",
 	"license": "MIT",
 	"repository": {
@@ -53,15 +53,15 @@
 		"validate": "directus-extension validate"
 	},
 	"devDependencies": {
-		"@directus/extensions-sdk": "17.0.4",
+		"@directus/extensions-sdk": "17.0.7",
 		"@types/express": "^5.0.6",
 		"typescript": "^5.9.3",
-		"vue": "^3.5.26"
+		"vue": "^3.5.27"
 	},
 	"dependencies": {
-		"@directus/types": "^13.5.0",
+		"@directus/types": "^14.1.0",
 		"flat": "^6.0.1",
-		"meilisearch": "^0.54.0",
-		"string-strip-html": "^13.5.0"
+		"meilisearch": "^0.55.0",
+		"string-strip-html": "^13.5.3"
 	}
 }
