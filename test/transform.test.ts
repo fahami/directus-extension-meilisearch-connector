@@ -264,6 +264,28 @@ describe("prepareDocumentsForIndexing", () => {
 		);
 
 		expect(emitFilter).toHaveBeenCalledTimes(2);
+		expect(emitFilter).toHaveBeenNthCalledWith(
+			1,
+			MEILISEARCH_DOCUMENT_FILTER,
+			expect.objectContaining({ id: 1, title: "A", collection: "posts" }),
+			expect.objectContaining({
+				action: "reindex",
+				collection: "posts",
+				item: { id: 1, title: "A" },
+			}),
+			undefined
+		);
+		expect(emitFilter).toHaveBeenNthCalledWith(
+			2,
+			MEILISEARCH_DOCUMENT_FILTER,
+			expect.objectContaining({ id: 2, title: "B", collection: "posts" }),
+			expect.objectContaining({
+				action: "reindex",
+				collection: "posts",
+				item: { id: 2, title: "B" },
+			}),
+			undefined
+		);
 		expect(documents).toEqual([
 			{ id: 1, title: "A", collection: "posts", transformed: true },
 			{ id: 2, title: "B", collection: "posts", transformed: true },
