@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const prepareDocumentForIndexing = vi.fn();
 const prepareDocumentsForIndexing = vi.fn();
 const waitForMeilisearchTask = vi.fn();
 
@@ -16,7 +15,6 @@ vi.mock("@directus/extensions-sdk", () => ({
 }));
 
 vi.mock("../src/transform", () => ({
-	prepareDocumentForIndexing,
 	prepareDocumentsForIndexing,
 }));
 
@@ -66,7 +64,6 @@ describe("endpoint /reindex", () => {
 
 	beforeEach(() => {
 		postHandler = undefined;
-		prepareDocumentForIndexing.mockReset();
 		prepareDocumentsForIndexing.mockReset();
 		waitForMeilisearchTask.mockReset();
 
@@ -333,12 +330,9 @@ describe("hook items.create", () => {
 			};
 		});
 
-		prepareDocumentForIndexing.mockResolvedValue({
-			id: 1,
-			title: "Hello",
-			collection: "posts",
-			transformed: true,
-		});
+		prepareDocumentsForIndexing.mockResolvedValue([
+			{ id: 1, title: "Hello", collection: "posts", transformed: true },
+		]);
 
 		meiliClientMock.index.mockReturnValue({ addDocuments });
 
@@ -375,14 +369,16 @@ describe("hook items.create", () => {
 			{ accountability, schema }
 		);
 
-		expect(prepareDocumentForIndexing).toHaveBeenCalledWith({
-			action: "create",
-			collection: "posts",
-			context: { accountability, database, schema },
-			emitter,
-			item: { id: 1, title: "Hello" },
-			preserveArrays: true,
-		});
+		expect(prepareDocumentsForIndexing).toHaveBeenCalledWith(
+			[{ id: 1, title: "Hello" }],
+			{
+				action: "create",
+				collection: "posts",
+				context: { accountability, database, schema },
+				emitter,
+				preserveArrays: true,
+			}
+		);
 		expect(addDocuments).toHaveBeenCalledWith([
 			{ id: 1, title: "Hello", collection: "posts", transformed: true },
 		]);

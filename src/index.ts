@@ -4,7 +4,7 @@ import { MeilisearchSettingsTable } from "./tables";
 import { waitForMeilisearchTask } from "./helpers";
 import { MeilisearchSettings } from "./models";
 import { SchemaOverview } from "@directus/types";
-import { prepareDocumentForIndexing, prepareDocumentsForIndexing } from "./transform";
+import { prepareDocumentsForIndexing } from "./transform";
 
 export default defineHook(async ({ init, action }, { logger, services, getSchema, database, emitter }) => {
     const TABLE_NAME = "meilisearch_settings";
@@ -181,15 +181,14 @@ export default defineHook(async ({ init, action }, { logger, services, getSchema
             const entity = entities[0];
             if (!entity) return;
 
-            const flattened = await prepareDocumentForIndexing({
+            const flattened = await prepareDocumentsForIndexing([entity], {
                 action: "create",
                 collection: config.Collection,
                 context: { accountability, database, schema },
                 emitter,
-                item: entity,
                 preserveArrays: config.PreserveArrays,
             });
-            await client.index(config.Collection).addDocuments([flattened]);
+            await client.index(config.Collection).addDocuments(flattened);
             logger.info(`[Meilisearch] Added ${config.Collection} ID ${meta.key}`);
         } catch (err: any) {
             logger.error(`[Meilisearch] Create Error: ${err}`);
