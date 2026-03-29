@@ -1,11 +1,12 @@
 import { defineHook } from "@directus/extensions-sdk";
 import { MeiliSearch } from "meilisearch";
 import { MeilisearchSettingsTable } from "./tables";
-import { flattenAndStripHtml, waitForMeilisearchTask } from "./helpers";
+import { waitForMeilisearchTask } from "./helpers";
 import { MeilisearchSettings } from "./models";
 import { SchemaOverview } from "@directus/types";
+import { prepareDocumentForIndexing, prepareDocumentsForIndexing } from "./transform";
 
-export default defineHook(async ({ init, action }, { logger, services, getSchema, database }) => {
+export default defineHook(async ({ init, action }, { logger, services, getSchema, database, emitter }) => {
     const TABLE_NAME = "meilisearch_settings";
     const { CollectionsService, ItemsService, FieldsService } = services;
 
@@ -74,10 +75,11 @@ export default defineHook(async ({ init, action }, { logger, services, getSchema
                     });
                     if (!entities || !entities.length) break;
 
-                    const flattenedEntities = entities.map(entity => {
-                        const flattened = flattenAndStripHtml(entity, configuration.PreserveArrays);
-                        flattened.collection = configuration.Collection;
-                        return flattened;
+                    const flattenedEntities = await prepareDocumentsForIndexing(entities, {
+                        action: "reindex",
+                        collection: configuration.Collection,
+                        emitter,
+                        preserveArrays: configuration.PreserveArrays,
                     });
 
                     await index.updateDocuments(flattenedEntities);
@@ -168,10 +170,16 @@ export default defineHook(async ({ init, action }, { logger, services, getSchema
         try {
             const itemsService = new ItemsService(config.Collection, { schema, accountability });
             const entities = await itemsService.readMany([meta.key], { fields: config.Fields });
-            if (entities.length === 0) return;
+            const entity = entities[0];
+            if (!entity) return;
 
-            const flattened = flattenAndStripHtml(entities[0], config.PreserveArrays);
-            flattened.collection = config.Collection;
+            const flattened = await prepareDocumentForIndexing({
+                action: "create",
+                collection: config.Collection,
+                emitter,
+                item: entity,
+                preserveArrays: config.PreserveArrays,
+            });
             await client.index(config.Collection).addDocuments([flattened]);
             logger.info(`[Meilisearch] Added ${config.Collection} ID ${meta.key}`);
         } catch (err: any) {
@@ -201,8 +209,16 @@ export default defineHook(async ({ init, action }, { logger, services, getSchema
                 return;
             }
 
-            const flattened = flattenAndStripHtml(entities[0], config.PreserveArrays);
-            flattened.collection = config.Collection;
+            const entity = entities[0];
+            if (!entity) return;
+
+            const flattened = await prepareDocumentForIndexing({
+                action: "update",
+                collection: config.Collection,
+                emitter,
+                item: entity,
+                preserveArrays: config.PreserveArrays,
+            });
             await index.updateDocuments([flattened]);
             logger.info(`[Meilisearch] Updated ${config.Collection} ID ${meta.keys[0]}`);
         } catch (err: any) {
