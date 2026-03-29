@@ -2,7 +2,8 @@
 	"compilerOptions": {
 		"target": "ES2019",
 		"lib": ["ES2019", "DOM"],
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
+		"module": "ESNext",
 		"strict": true,
 		"noFallthroughCasesInSwitch": true,
 		"esModuleInterop": true,
@@ -22,7 +23,8 @@
 		"forceConsistentCasingInFileNames": true,
 		"allowSyntheticDefaultImports": true,
 		"isolatedModules": true,
-		"rootDir": "./src"
+		"rootDir": ".",
+		"types": ["vitest/globals"]
 	},
-	"include": ["./src/**/*.ts"]
+	"include": ["./src/**/*.ts", "./test/**/*.ts"]
 }

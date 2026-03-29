@@ -50,12 +50,14 @@
 		"build": "directus-extension build",
 		"dev": "directus-extension build -w --no-minify",
 		"link": "directus-extension link",
+		"test": "vitest run",
 		"validate": "directus-extension validate"
 	},
 	"devDependencies": {
 		"@directus/extensions-sdk": "17.0.7",
 		"@types/express": "^5.0.6",
 		"typescript": "^5.9.3",
+		"vitest": "^4.1.2",
 		"vue": "^3.5.27"
 	},
 	"dependencies": {
