@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const prepareDocumentForIndexing = vi.fn();
 const prepareDocumentsForIndexing = vi.fn();
 const waitForMeilisearchTask = vi.fn();
 
@@ -15,6 +16,7 @@ vi.mock("@directus/extensions-sdk", () => ({
 }));
 
 vi.mock("../src/transform", () => ({
+	prepareDocumentForIndexing,
 	prepareDocumentsForIndexing,
 }));
 
@@ -64,6 +66,7 @@ describe("endpoint /reindex", () => {
 
 	beforeEach(() => {
 		postHandler = undefined;
+		prepareDocumentForIndexing.mockReset();
 		prepareDocumentsForIndexing.mockReset();
 		waitForMeilisearchTask.mockReset();
 
@@ -292,5 +295,201 @@ describe("hook items.create", () => {
 			filter: { status: { _eq: "published" } },
 		});
 		expect(meiliClientMock.index).not.toHaveBeenCalled();
+	});
+
+	it("passes create transform context through realtime sync", async () => {
+		const actionHandlers = new Map<string, (...args: any[]) => unknown>();
+		const addDocuments = vi.fn(async () => undefined);
+		const logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() };
+		const database = { client: "knex" };
+		const emitter = { emitFilter: vi.fn() };
+		const schema = {
+			collections: {
+				posts: { primary: "id" },
+			},
+		};
+		const accountability = { admin: true };
+
+		const itemsReadMany = vi.fn(async () => [{ id: 1, title: "Hello" }]);
+		const ItemsService = createItemsServiceCtor((collection: string) => {
+			if (collection === "meilisearch_settings") {
+				return {
+					readOne: vi.fn(async () => ({
+						host: "http://localhost:7700",
+						api_key: "masterKey",
+						collections_configuration: [
+							{
+								collection: "posts",
+								fields: ["id", "title"],
+								preserveArrays: true,
+							},
+						],
+					})),
+				};
+			}
+
+			return {
+				readMany: itemsReadMany,
+			};
+		});
+
+		prepareDocumentForIndexing.mockResolvedValue({
+			id: 1,
+			title: "Hello",
+			collection: "posts",
+			transformed: true,
+		});
+
+		meiliClientMock.index.mockReturnValue({ addDocuments });
+
+		await registerHook(
+			{
+				action: (name: string, handler: (...args: any[]) => unknown) => {
+					actionHandlers.set(name, handler);
+				},
+				embed: vi.fn(),
+				filter: vi.fn(),
+				init: vi.fn(),
+				schedule: vi.fn(),
+			} as any,
+			{
+				database,
+				emitter,
+				getSchema: vi.fn(async () => schema),
+				logger,
+				services: {
+					CollectionsService: vi.fn(),
+					FieldsService: vi.fn(),
+					ItemsService,
+				},
+			} as any
+		);
+
+		await actionHandlers.get("meilisearch_settings.items.update")?.(
+			{ payload: {} },
+			{ schema }
+		);
+
+		await actionHandlers.get("items.create")?.(
+			{ collection: "posts", key: 1 },
+			{ accountability, schema }
+		);
+
+		expect(prepareDocumentForIndexing).toHaveBeenCalledWith({
+			action: "create",
+			collection: "posts",
+			context: { accountability, database, schema },
+			emitter,
+			item: { id: 1, title: "Hello" },
+			preserveArrays: true,
+		});
+		expect(addDocuments).toHaveBeenCalledWith([
+			{ id: 1, title: "Hello", collection: "posts", transformed: true },
+		]);
+		expect(logger.info).toHaveBeenCalledWith("[Meilisearch] Added posts ID 1");
+	});
+});
+
+describe("hook items.update", () => {
+	it("reindexes all matched entities and deletes stale keys during realtime sync", async () => {
+		const actionHandlers = new Map<string, (...args: any[]) => unknown>();
+		const updateDocuments = vi.fn(async () => undefined);
+		const deleteDocuments = vi.fn(async () => undefined);
+		const logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() };
+		const database = { client: "knex" };
+		const emitter = { emitFilter: vi.fn() };
+		const schema = {
+			collections: {
+				posts: { primary: "uuid" },
+			},
+		};
+		const accountability = { admin: true };
+
+		const itemsReadMany = vi.fn(async () => [
+			{ uuid: "post-1", title: "First" },
+			{ uuid: "post-3", title: "Third" },
+		]);
+		const ItemsService = createItemsServiceCtor((collection: string) => {
+			if (collection === "meilisearch_settings") {
+				return {
+					readOne: vi.fn(async () => ({
+						host: "http://localhost:7700",
+						api_key: "masterKey",
+						collections_configuration: [
+							{
+								collection: "posts",
+								fields: ["uuid", "title"],
+								actionFilter: { status: { _eq: "published" } },
+								preserveArrays: true,
+							},
+						],
+					})),
+				};
+			}
+
+			return {
+				readMany: itemsReadMany,
+			};
+		});
+
+		prepareDocumentsForIndexing.mockResolvedValue([
+			{ uuid: "post-1", title: "First", collection: "posts", transformed: true },
+			{ uuid: "post-3", title: "Third", collection: "posts", transformed: true },
+		]);
+
+		meiliClientMock.index.mockReturnValue({ deleteDocuments, updateDocuments });
+
+		await registerHook(
+			{
+				action: (name: string, handler: (...args: any[]) => unknown) => {
+					actionHandlers.set(name, handler);
+				},
+				embed: vi.fn(),
+				filter: vi.fn(),
+				init: vi.fn(),
+				schedule: vi.fn(),
+			} as any,
+			{
+				database,
+				emitter,
+				getSchema: vi.fn(async () => schema),
+				logger,
+				services: {
+					CollectionsService: vi.fn(),
+					FieldsService: vi.fn(),
+					ItemsService,
+				},
+			} as any
+		);
+
+		await actionHandlers.get("meilisearch_settings.items.update")?.(
+			{ payload: {} },
+			{ schema }
+		);
+
+		await actionHandlers.get("items.update")?.(
+			{ collection: "posts", keys: ["post-1", "post-2", "post-3"] },
+			{ accountability, schema }
+		);
+
+		expect(prepareDocumentsForIndexing).toHaveBeenCalledWith(
+			[
+				{ uuid: "post-1", title: "First" },
+				{ uuid: "post-3", title: "Third" },
+			],
+			{
+				action: "update",
+				collection: "posts",
+				context: { accountability, database, schema },
+				emitter,
+				preserveArrays: true,
+			}
+		);
+		expect(updateDocuments).toHaveBeenCalledWith([
+			{ uuid: "post-1", title: "First", collection: "posts", transformed: true },
+			{ uuid: "post-3", title: "Third", collection: "posts", transformed: true },
+		]);
+		expect(deleteDocuments).toHaveBeenCalledWith(["post-2"]);
+		expect(logger.info).toHaveBeenCalledWith("[Meilisearch] Updated posts IDs post-1, post-2, post-3");
 	});
 });

@@ -34,6 +34,10 @@ export default defineHook(async ({ init, action }, { logger, services, getSchema
         }
     };
 
+    const getCollectionPrimaryKey = (schema: SchemaOverview, collection: string) => {
+        return schema.collections[collection]?.primary ?? "id";
+    };
+
     // --- Reindexing Logic ---
     const runReindex = async (schema: SchemaOverview) => {
         if (!cachedSettings || !client) {
@@ -204,6 +208,7 @@ export default defineHook(async ({ init, action }, { logger, services, getSchema
         try {
             const itemsService = new (ItemsService as any)(config.Collection, { schema, accountability });
             const index = client.index(config.Collection);
+            const primaryKey = getCollectionPrimaryKey(schema, config.Collection);
 
             // Check if the item still matches filters
             const entities = await itemsService.readMany(meta.keys, { fields: config.Fields, filter: config.ActionFilter });
@@ -214,19 +219,28 @@ export default defineHook(async ({ init, action }, { logger, services, getSchema
                 return;
             }
 
-            const entity = entities[0];
-            if (!entity) return;
-
-            const flattened = await prepareDocumentForIndexing({
+            const flattened = await prepareDocumentsForIndexing(entities, {
                 action: "update",
                 collection: config.Collection,
                 context: { accountability, database, schema },
                 emitter,
-                item: entity,
                 preserveArrays: config.PreserveArrays,
             });
-            await index.updateDocuments([flattened]);
-            logger.info(`[Meilisearch] Updated ${config.Collection} ID ${meta.keys[0]}`);
+
+            const indexedKeys = new Set<string | number>(
+                (entities as Record<string, unknown>[])
+                    .map((entity: Record<string, unknown>) => entity[primaryKey])
+                    .filter((key: unknown): key is string | number => key !== undefined && key !== null)
+            );
+            const staleKeys = meta.keys.filter((key: string | number) => !indexedKeys.has(key));
+
+            await index.updateDocuments(flattened);
+
+            if (staleKeys.length > 0) {
+                await index.deleteDocuments(staleKeys);
+            }
+
+            logger.info(`[Meilisearch] Updated ${config.Collection} IDs ${meta.keys.join(", ")}`);
         } catch (err: any) {
             logger.error(`[Meilisearch] Update Error: ${err}`);
             if (err.stack) {
