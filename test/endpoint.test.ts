@@ -488,4 +488,86 @@ describe("hook items.update", () => {
 		expect(deleteDocuments).toHaveBeenCalledWith(["post-2"]);
 		expect(logger.info).toHaveBeenCalledWith("[Meilisearch] Updated posts IDs post-1, post-2, post-3");
 	});
+
+	it("does not delete updated documents when event keys and primary keys differ by type", async () => {
+		const actionHandlers = new Map<string, (...args: any[]) => unknown>();
+		const updateDocuments = vi.fn(async () => undefined);
+		const deleteDocuments = vi.fn(async () => undefined);
+		const logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() };
+		const database = { client: "knex" };
+		const emitter = { emitFilter: vi.fn() };
+		const schema = {
+			collections: {
+				posts: { primary: "id" },
+			},
+		};
+		const accountability = { admin: true };
+
+		const itemsReadMany = vi.fn(async () => [{ id: 1, title: "First" }]);
+		const ItemsService = createItemsServiceCtor((collection: string) => {
+			if (collection === "meilisearch_settings") {
+				return {
+					readOne: vi.fn(async () => ({
+						host: "http://localhost:7700",
+						api_key: "masterKey",
+						collections_configuration: [
+							{
+								collection: "posts",
+								fields: ["title"],
+								actionFilter: { status: { _eq: "published" } },
+							},
+						],
+					})),
+				};
+			}
+
+			return {
+				readMany: itemsReadMany,
+			};
+		});
+
+		prepareDocumentsForIndexing.mockResolvedValue([
+			{ id: 1, title: "First", collection: "posts", transformed: true },
+		]);
+
+		meiliClientMock.index.mockReturnValue({ deleteDocuments, updateDocuments });
+
+		await registerHook(
+			{
+				action: (name: string, handler: (...args: any[]) => unknown) => {
+					actionHandlers.set(name, handler);
+				},
+				embed: vi.fn(),
+				filter: vi.fn(),
+				init: vi.fn(),
+				schedule: vi.fn(),
+			} as any,
+			{
+				database,
+				emitter,
+				getSchema: vi.fn(async () => schema),
+				logger,
+				services: {
+					CollectionsService: vi.fn(),
+					FieldsService: vi.fn(),
+					ItemsService,
+				},
+			} as any
+		);
+
+		await actionHandlers.get("meilisearch_settings.items.update")?.(
+			{ payload: {} },
+			{ schema }
+		);
+
+		await actionHandlers.get("items.update")?.(
+			{ collection: "posts", keys: ["1"] },
+			{ accountability, schema }
+		);
+
+		expect(updateDocuments).toHaveBeenCalledWith([
+			{ id: 1, title: "First", collection: "posts", transformed: true },
+		]);
+		expect(deleteDocuments).not.toHaveBeenCalled();
+	});
 });

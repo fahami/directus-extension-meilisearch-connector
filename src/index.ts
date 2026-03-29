@@ -226,12 +226,13 @@ export default defineHook(async ({ init, action }, { logger, services, getSchema
                 preserveArrays: config.PreserveArrays,
             });
 
-            const indexedKeys = new Set<string | number>(
+            const indexedKeys = new Set<string>(
                 (entities as Record<string, unknown>[])
                     .map((entity: Record<string, unknown>) => entity[primaryKey])
                     .filter((key: unknown): key is string | number => key !== undefined && key !== null)
+                    .map((key: string | number) => String(key))
             );
-            const staleKeys = meta.keys.filter((key: string | number) => !indexedKeys.has(key));
+            const staleKeys = meta.keys.filter((key: string | number) => !indexedKeys.has(String(key)));
 
             await index.updateDocuments(flattened);
 
