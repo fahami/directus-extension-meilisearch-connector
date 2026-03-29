@@ -170,7 +170,10 @@ export default defineHook(async ({ init, action }, { logger, services, getSchema
 
         try {
             const itemsService = new ItemsService(config.Collection, { schema, accountability });
-            const entities = await itemsService.readMany([meta.key], { fields: config.Fields });
+            const entities = await itemsService.readMany([meta.key], {
+                fields: config.Fields,
+                filter: config.ActionFilter,
+            });
             const entity = entities[0];
             if (!entity) return;
 

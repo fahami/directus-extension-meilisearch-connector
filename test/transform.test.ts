@@ -224,6 +224,21 @@ describe("prepareDocumentForIndexing", () => {
 			})
 		).rejects.toThrow(`${MEILISEARCH_DOCUMENT_FILTER} must return an object`);
 	});
+
+	it("throws when the transform hook returns a non-plain object", async () => {
+		const emitter: DirectusFilterEmitter = {
+			emitFilter: async () => new Date("2026-03-29T00:00:00.000Z") as unknown as Record<string, unknown>,
+		};
+
+		await expect(
+			prepareDocumentForIndexing({
+				action: "create",
+				collection: "posts",
+				emitter,
+				item: { id: 1 },
+			})
+		).rejects.toThrow(`${MEILISEARCH_DOCUMENT_FILTER} must return an object`);
+	});
 });
 
 describe("prepareDocumentsForIndexing", () => {

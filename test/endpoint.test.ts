@@ -11,6 +11,7 @@ let meiliClientMock: {
 
 vi.mock("@directus/extensions-sdk", () => ({
 	defineEndpoint: (register: unknown) => register,
+	defineHook: (register: unknown) => register,
 }));
 
 vi.mock("../src/transform", () => ({
@@ -28,6 +29,7 @@ vi.mock("meilisearch", () => ({
 }));
 
 const { default: registerEndpoint } = await import("../src/endpoint");
+const { default: registerHook } = await import("../src/index");
 const endpointHandler = registerEndpoint as unknown as (
 	router: { post: (path: string, handler: (req: any, res: any) => Promise<unknown>) => void },
 	context: Record<string, unknown>
@@ -218,5 +220,75 @@ describe("endpoint /reindex", () => {
 			{ id: 1, title: "Hello", collection: "posts", transformed: true },
 		]);
 		expect(logger.info).toHaveBeenCalledWith("Endpoint: Full reindex complete.");
+	});
+});
+
+describe("hook items.create", () => {
+	it("applies ActionFilter before indexing newly created items", async () => {
+		const actionHandlers = new Map<string, (...args: any[]) => unknown>();
+		const itemsReadMany = vi.fn(async () => []);
+		const ItemsService = createItemsServiceCtor((collection: string) => {
+			if (collection === "meilisearch_settings") {
+				return {
+					readOne: vi.fn(async () => ({
+						host: "http://localhost:7700",
+						api_key: "masterKey",
+						collections_configuration: [
+							{
+								collection: "posts",
+								fields: ["id", "title"],
+								actionFilter: { status: { _eq: "published" } },
+							},
+						],
+					})),
+				};
+			}
+
+			return {
+				readMany: itemsReadMany,
+			};
+		});
+
+		await registerHook(
+			{
+				action: (name: string, handler: (...args: any[]) => unknown) => {
+					actionHandlers.set(name, handler);
+				},
+				embed: vi.fn(),
+				filter: vi.fn(),
+				init: vi.fn(),
+				schedule: vi.fn(),
+			} as any,
+			{
+				database: vi.fn(),
+				emitter: {},
+				getSchema: vi.fn(async () => ({ collections: [] })),
+				logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
+				services: {
+					CollectionsService: vi.fn(),
+					FieldsService: vi.fn(),
+					ItemsService,
+				},
+			} as any
+		);
+
+		await actionHandlers.get("meilisearch_settings.items.update")?.(
+			{ payload: {} },
+			{ schema: { collections: [] } }
+		);
+
+		await actionHandlers.get("items.create")?.(
+			{ collection: "posts", key: 1 },
+			{
+				accountability: { admin: true },
+				schema: { collections: [] },
+			}
+		);
+
+		expect(itemsReadMany).toHaveBeenCalledWith([1], {
+			fields: ["id", "title"],
+			filter: { status: { _eq: "published" } },
+		});
+		expect(meiliClientMock.index).not.toHaveBeenCalled();
 	});
 });
