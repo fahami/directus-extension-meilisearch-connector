@@ -2,17 +2,6 @@
 
 A powerful Directus extension to synchronize your content seamlessly with [Meilisearch](https://www.meilisearch.com/). It provides real-time updates, advanced filtering, and instant search capabilities for your Directus projects.
 
-This project is based on the [Healios directus-extension-meilisearch-integration](https://github.com/Healios/directus-extension-meilisearch-integration), with a few practical improvements for day-to-day use.
-
-## Why This Fork?
-
-Compared to the Healios extension, this package adds:
-
-*   **Hot-reloading for settings:** Change indexed collections or filters without restarting Directus.
-*   **Manual reindex controls:** Trigger a full reindex from the Admin Panel, API, or CLI.
-*   **Optional array preservation:** Keep JSON arrays intact for faceting and filtering instead of flattening everything.
-*   **Improved stability:** Better error handling and a simpler setup flow in Directus.
-
 ## 🌟 Key Features
 
 *   **Real-Time Synchronization:** Create, update, or delete items in Directus, and they appear in Meilisearch instantly.
@@ -64,18 +53,15 @@ In the **Collections Configuration** field, add your rules:
 If you have existing data, you can sync it all at once using one of these methods:
 
 *   **Admin Panel (Easiest):** In the *Meilisearch Settings* item, toggle the **"Start Reindexing"** switch to **ON** and save. It will run in the background and turn itself off when done.
-*   **API:** Send a POST request to `/meilisearch/reindex` (requires Admin Token). No JSON payload is required.
+*   **API:** Send a POST request to `/meilisearch/reindex` (requires Admin Token).
 *   **CLI:** Run `npx directus meilisearch:reindex` in your server terminal.
-
-Example:
-
-```bash
-curl -X POST "http://localhost:8055/meilisearch/reindex" \
-  -H "Authorization: Bearer <DIRECTUS_ADMIN_TOKEN>"
-```
-
-The endpoint only checks for admin access and starts the reindex job in the background. You do not need to send a request body unless you want to send an empty JSON object like `{}`.
 
 ## 👏 Credits
 
-This project builds on the [directus-extension-meilisearch-integration](https://github.com/Healios/directus-extension-meilisearch-integration) by Healios.
+This project is an improved version of the [directus-extension-meilisearch-integration](https://github.com/Healios/directus-extension-meilisearch-integration) by Healios.
+
+**Major improvements in this version:**
+*   Eliminated the need to restart the server when changing settings.
+*   Added an API Endpoint and UI Toggle for reindexing.
+*   Added support for preserving array structures.
+*   Improved error handling and system stability.

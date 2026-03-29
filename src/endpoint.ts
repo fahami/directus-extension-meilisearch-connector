@@ -1,10 +1,9 @@
 import { defineEndpoint } from '@directus/extensions-sdk';
 import { MeiliSearch } from "meilisearch";
-import { waitForMeilisearchTask } from "./helpers";
+import { flattenAndStripHtml, waitForMeilisearchTask } from "./helpers";
 import { MeilisearchSettings } from "./models";
-import { prepareDocumentsForIndexing } from "./transform";
 
-export default defineEndpoint((router, { services, getSchema, logger, emitter }) => {
+export default defineEndpoint((router, { services, getSchema, logger }) => {
 	const { ItemsService } = services;
 	const TABLE_NAME = "meilisearch_settings";
 
@@ -65,11 +64,10 @@ export default defineEndpoint((router, { services, getSchema, logger, emitter })
 
 							if (!entities || !entities.length) break;
 
-							const flattenedEntities = await prepareDocumentsForIndexing(entities, {
-								action: "reindex",
-								collection: configuration.Collection,
-								emitter,
-								preserveArrays: configuration.PreserveArrays,
+							const flattenedEntities = entities.map(entity => {
+								const flattened = flattenAndStripHtml(entity, configuration.PreserveArrays);
+								flattened.collection = configuration.Collection;
+								return flattened;
 							});
 
 							await index.updateDocuments(flattenedEntities);
