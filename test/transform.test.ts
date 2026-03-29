@@ -47,6 +47,7 @@ describe("prepareDocumentForIndexing", () => {
 		const document = await prepareDocumentForIndexing({
 			action: "update",
 			collection: "posts",
+			context: { accountability: { role: "admin" }, schema: { collections: [] } },
 			emitter,
 			item: {
 				id: 1,
@@ -72,7 +73,11 @@ describe("prepareDocumentForIndexing", () => {
 					title: "Hello",
 					date_created: "2009-02-13T23:31:30Z",
 				},
-			})
+			}),
+			{
+				accountability: { role: "admin" },
+				schema: { collections: [] },
+			}
 		);
 		expect(document).toEqual({
 			id: 1,
@@ -142,7 +147,11 @@ describe("prepareDocumentForIndexing", () => {
 				],
 				collection: "recipes",
 			}),
-			expect.any(Object)
+			expect.objectContaining({
+				action: "reindex",
+				collection: "recipes",
+			}),
+			undefined
 		);
 		expect(document).toEqual({
 			id: 3,
@@ -185,7 +194,11 @@ describe("prepareDocumentForIndexing", () => {
 				"author.name": "Fahmi",
 				collection: "articles",
 			}),
-			expect.any(Object)
+			expect.objectContaining({
+				action: "create",
+				collection: "articles",
+			}),
+			undefined
 		);
 		expect(document).toEqual({
 			id: 4,

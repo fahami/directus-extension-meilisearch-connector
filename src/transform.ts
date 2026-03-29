@@ -17,13 +17,15 @@ export interface DirectusFilterEmitter {
 	emitFilter?: (
 		event: string,
 		payload: IndexableDocument,
-		meta: MeilisearchDocumentFilterMeta
+		meta: MeilisearchDocumentFilterMeta,
+		context?: Record<string, unknown>
 	) => Promise<IndexableDocument> | IndexableDocument;
 }
 
 export interface PrepareDocumentOptions {
 	action: MeilisearchSyncAction;
 	collection: string;
+	context?: Record<string, unknown>;
 	emitter?: DirectusFilterEmitter;
 	item: Record<string, unknown>;
 	preserveArrays?: boolean;
@@ -46,7 +48,7 @@ const applyDocumentTransform = async (
 		collection: options.collection,
 		event: MEILISEARCH_DOCUMENT_FILTER,
 		item: options.item,
-	});
+	}, options.context);
 
 	if (!isPlainObject(transformed)) {
 		throw new Error(
@@ -64,6 +66,7 @@ const prepareDocumentForIndexing = async (options: PrepareDocumentOptions): Prom
 	return applyDocumentTransform(document, {
 		action: options.action,
 		collection: options.collection,
+		context: options.context,
 		emitter: options.emitter,
 		item: options.item,
 	});

@@ -167,6 +167,7 @@ describe("endpoint /reindex", () => {
 
 		const logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() };
 		const emitter = { emitFilter: vi.fn() };
+		const schema = { collections: ["posts"] };
 
 		prepareDocumentsForIndexing.mockResolvedValue([
 			{ id: 1, title: "Hello", collection: "posts", transformed: true },
@@ -183,7 +184,7 @@ describe("endpoint /reindex", () => {
 			},
 			{
 				emitter,
-				getSchema: vi.fn(async () => ({ collections: ["posts"] })),
+				getSchema: vi.fn(async () => schema),
 				logger,
 				services: { ItemsService },
 			}
@@ -208,6 +209,7 @@ describe("endpoint /reindex", () => {
 			{
 				action: "reindex",
 				collection: "posts",
+				context: { accountability: { admin: true }, schema },
 				emitter,
 				preserveArrays: true,
 			}

@@ -68,6 +68,7 @@ export default defineEndpoint((router, { services, getSchema, logger, emitter })
 							const flattenedEntities = await prepareDocumentsForIndexing(entities, {
 								action: "reindex",
 								collection: configuration.Collection,
+								context: { accountability, schema },
 								emitter,
 								preserveArrays: configuration.PreserveArrays,
 							});
