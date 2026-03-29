@@ -168,6 +168,7 @@ describe("endpoint /reindex", () => {
 		});
 
 		const logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn() };
+		const database = { client: "knex" };
 		const emitter = { emitFilter: vi.fn() };
 		const schema = { collections: ["posts"] };
 
@@ -185,6 +186,7 @@ describe("endpoint /reindex", () => {
 				}),
 			},
 			{
+				database,
 				emitter,
 				getSchema: vi.fn(async () => schema),
 				logger,
@@ -211,7 +213,7 @@ describe("endpoint /reindex", () => {
 			{
 				action: "reindex",
 				collection: "posts",
-				context: { accountability: { admin: true }, schema },
+				context: { accountability: { admin: true }, database, schema },
 				emitter,
 				preserveArrays: true,
 			}
@@ -260,7 +262,7 @@ describe("hook items.create", () => {
 				schedule: vi.fn(),
 			} as any,
 			{
-				database: vi.fn(),
+				database: { client: "knex" },
 				emitter: {},
 				getSchema: vi.fn(async () => ({ collections: [] })),
 				logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },

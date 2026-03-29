@@ -4,7 +4,7 @@ import { waitForMeilisearchTask } from "./helpers";
 import { MeilisearchSettings } from "./models";
 import { prepareDocumentsForIndexing } from "./transform";
 
-export default defineEndpoint((router, { services, getSchema, logger, emitter }) => {
+export default defineEndpoint((router, { services, getSchema, logger, emitter, database }) => {
 	const { ItemsService } = services;
 	const TABLE_NAME = "meilisearch_settings";
 
@@ -68,7 +68,7 @@ export default defineEndpoint((router, { services, getSchema, logger, emitter })
 							const flattenedEntities = await prepareDocumentsForIndexing(entities, {
 								action: "reindex",
 								collection: configuration.Collection,
-								context: { accountability, schema },
+								context: { accountability, database, schema },
 								emitter,
 								preserveArrays: configuration.PreserveArrays,
 							});

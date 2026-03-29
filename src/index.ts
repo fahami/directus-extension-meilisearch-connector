@@ -78,7 +78,7 @@ export default defineHook(async ({ init, action }, { logger, services, getSchema
                     const flattenedEntities = await prepareDocumentsForIndexing(entities, {
                         action: "reindex",
                         collection: configuration.Collection,
-                        context: { schema },
+                        context: { database, schema },
                         emitter,
                         preserveArrays: configuration.PreserveArrays,
                     });
@@ -180,7 +180,7 @@ export default defineHook(async ({ init, action }, { logger, services, getSchema
             const flattened = await prepareDocumentForIndexing({
                 action: "create",
                 collection: config.Collection,
-                context: { accountability, schema },
+                context: { accountability, database, schema },
                 emitter,
                 item: entity,
                 preserveArrays: config.PreserveArrays,
@@ -220,7 +220,7 @@ export default defineHook(async ({ init, action }, { logger, services, getSchema
             const flattened = await prepareDocumentForIndexing({
                 action: "update",
                 collection: config.Collection,
-                context: { accountability, schema },
+                context: { accountability, database, schema },
                 emitter,
                 item: entity,
                 preserveArrays: config.PreserveArrays,

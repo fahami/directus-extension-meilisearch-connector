@@ -47,7 +47,7 @@ describe("prepareDocumentForIndexing", () => {
 		const document = await prepareDocumentForIndexing({
 			action: "update",
 			collection: "posts",
-			context: { accountability: { role: "admin" }, schema: { collections: [] } },
+			context: { accountability: { role: "admin" }, database: { client: "knex" }, schema: { collections: [] } },
 			emitter,
 			item: {
 				id: 1,
@@ -76,6 +76,7 @@ describe("prepareDocumentForIndexing", () => {
 			}),
 			{
 				accountability: { role: "admin" },
+				database: { client: "knex" },
 				schema: { collections: [] },
 			}
 		);
