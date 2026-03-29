@@ -2,7 +2,7 @@ import { Filter } from "@directus/types";
 
 class CollectionConfiguration
 {
-    constructor(collection: string, queryFilter: Filter, actionFilter: object, fields: string[], preserveArrays: boolean = false)
+    constructor(collection: string, queryFilter: Filter, actionFilter: Filter, fields: string[], preserveArrays: boolean = false)
     {
         this.Collection = collection;
         this.QueryFilter = queryFilter;
@@ -13,7 +13,7 @@ class CollectionConfiguration
 
     public Collection: string;
     public QueryFilter: Filter;
-    public ActionFilter: object;
+    public ActionFilter: Filter;
     public Fields: string[];
     public PreserveArrays: boolean;
 }
