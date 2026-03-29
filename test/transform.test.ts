@@ -291,4 +291,36 @@ describe("prepareDocumentsForIndexing", () => {
 			{ id: 2, title: "B", collection: "posts", transformed: true },
 		]);
 	});
+
+	it("keeps valid documents when one transform fails", async () => {
+		const emitFilter = vi.fn(async (_event, payload) => {
+			if (payload.id === 2) {
+				throw new Error("boom");
+			}
+
+			return {
+				...payload,
+				transformed: true,
+			};
+		});
+
+		const documents = await prepareDocumentsForIndexing(
+			[
+				{ id: 1, title: "A" },
+				{ id: 2, title: "B" },
+				{ id: 3, title: "C" },
+			],
+			{
+				action: "reindex",
+				collection: "posts",
+				emitter: { emitFilter },
+			}
+		);
+
+		expect(emitFilter).toHaveBeenCalledTimes(3);
+		expect(documents).toEqual([
+			{ id: 1, title: "A", collection: "posts", transformed: true },
+			{ id: 3, title: "C", collection: "posts", transformed: true },
+		]);
+	});
 });

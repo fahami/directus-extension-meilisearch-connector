@@ -81,7 +81,11 @@ const prepareDocumentsForIndexing = async (
 	items: Record<string, unknown>[],
 	options: Omit<PrepareDocumentOptions, "item">
 ): Promise<IndexableDocument[]> => {
-	return Promise.all(items.map((item) => prepareDocumentForIndexing({ ...options, item })));
+	const results = await Promise.allSettled(
+		items.map((item) => prepareDocumentForIndexing({ ...options, item }))
+	);
+
+	return results.flatMap((result) => (result.status === "fulfilled" ? [result.value] : []));
 };
 
 export { applyDocumentTransform, prepareDocumentForIndexing, prepareDocumentsForIndexing };
